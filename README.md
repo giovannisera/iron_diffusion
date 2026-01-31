@@ -8,7 +8,7 @@
 - Install the *gfortran* compiler
 
 ## INSTRUCTIONS
-- Compile both *griglia.f90* and *z_diff.f90*
+- Compile *z_diff.f90*
   Compiling prompt: 'bash'
 - Run the simulation changing the simulation paramaters as you want
   Simulation parameters:
