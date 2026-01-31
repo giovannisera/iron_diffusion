@@ -1,0 +1,8 @@
+#module files
+*.mod
+
+#eseguibili
+*.exe
+
+#output
+*.txt
