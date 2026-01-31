@@ -241,9 +241,13 @@ program DIFFUSIONE_METALLI
     print*, "Points needed to cover ", rmax/3.086d24, " Mpc: ", n
 
 !ARRAY ALLOCATION
-
-
-
+    allocate(r(0:n-1), rr(0:n-1))
+    allocate(rho(0:n-1), bcg(0:n-1))
+    allocate(rhogas(0:n-1), rhogas_bcg(0:n-1), rhogas_t(0:n-1), rhogas_turb(0:n-1))
+    allocate(mdm(0:n-1), mbcg(0:n-1))
+    allocate(mgas(0:n-1), mgas_bcg(0:n-1), mgas_t(0:n-1), mgas_turb(0:n-1))
+    allocate(lnrho(0:n-1), lnrho_bcg(0:n-1), lnrho_t(0:n-1), lnrho_turb(0:n-1))
+    allocate(t(0:n-1), zfe(0:n-1), rhofe(0:n-1), gradfe(0:n-1))
     
 !EQUILIBRIO IDROSTATICO IN UN AMMASSO DI GALASSIE
     !CREAZIONE DELLA GRIGLIE DELLE DISTANZE, assunta di SPAZIATURA COSTANTE
@@ -259,7 +263,7 @@ program DIFFUSIONE_METALLI
     rr(0)=rmin+h/2
     do i=1, n-1
         r(i)=r(i-1)+h
-        h=1.005d0*h !vedi "griglia.f90"
+        h=1.005d0*h 
         rr(i)=r(i)+h/2
     enddo
 
@@ -541,4 +545,11 @@ program DIFFUSIONE_METALLI
         write(17,*) log10(rr(i)/(pc*1d3)), zfe(i)/zsol
     enddo
     close(17)
+
+!DEALLOCATION OF THE ARRAYS
+    deallocate(r, rr, rho, bcg, rhogas, rhogas_bcg, rhogas_t, rhogas_turb, &
+           mdm, mbcg, mgas, mgas_bcg, mgas_t, mgas_turb, &
+           lnrho, lnrho_bcg, lnrho_t, lnrho_turb, t, zfe, rhofe, gradfe)
+
+           
 end program DIFFUSIONE_METALLI
