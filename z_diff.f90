@@ -178,15 +178,17 @@ program DIFFUSIONE_METALLI
     use funzioni
 
     implicit none
-    integer, parameter:: n=1006 !punti nella griglia, vedi "griglia.f90"
-    integer:: i !indice di scorrimento nelle liste
+    integer:: n !grid points
+    integer:: i !list indexing
 
     real*8, parameter:: e=2.71828d0 !numero di Nepero, usato per la conversione da logarirmo naturale a logaritmo in base 10
     real*8, parameter:: msun=1.989d33
-    real*8, parameter:: pc=3.086d18 !pc nelle unità cgs
+    real*8, parameter:: pc=3.086d18 !pc cgs units
     real*8, parameter:: rmin=0d0, rmax=3*pc*10**6 !massima distanza dal centro dell'ammasso studiata, 3Mpc
     real*8, parameter:: zsol=1.8d-3 !abbondanza del ferro nel sole
+    real*8, parameter:: f=1.005d0 !increment factor in non-uniform grids
 
+    real*8::r_tmp !grid points for arrays' length determination
     real*8:: h !passo d'integrazione sulla coordinata radiale, assunto non costante, vedi "griglia.f90"
     real*8:: lnrho0 !condizione iniziale per la densità del gas all'equilibrio idrostatico (NFW)
     real*8:: lnrho0_bcg !condizione iniziale per la densità del gas all'equilibrio idrostatico  (NFW+BCG)
@@ -203,30 +205,46 @@ program DIFFUSIONE_METALLI
     real*8:: snu !quantificatore del contributo nell'arricchimento di ferro da parte delle SNIa 
     real*8:: a !parametro a nel profilo di Hernquist
 
-    real*8, dimension(0:n-1):: r, rr !griglie delle coordinate radiali
-    real*8, dimension(0:n-1):: rho !profilo di densità di NFW
-    real*8, dimension(0:n-1):: bcg !prfilo di densità di Hernquist
-    real*8, dimension(0:n-1):: rhogas !profilo di densità del gas (considerando solo NFW)
-    real*8, dimension(0:n-1):: rhogas_bcg !profilo di densità del gas (considerando NFW+BCG)
-    real*8, dimension(0:n-1):: rhogas_t !profilo di densità del gas (considerando NFW+BCG+T non costante)
-    real*8, dimension(0:n-1):: rhogas_turb !profilo di densità del gas (considerando NFW+BCG+T non costante+turbolenza)
-    real*8, dimension(0:n-1):: mdm !massa della Materia Oscura entro un raggio r
-    real*8, dimension(0:n-1):: mbcg !massa della Bright Central Galaxy entro un raggio r, profilo di Hernquist (1990)
-    real*8, dimension(0:n-1):: mgas !massa della gas entro un raggio r (considerando solo NFW)
-    real*8, dimension(0:n-1):: mgas_bcg !massa della gas entro un raggio r (considerando NFW+BCG)
-    real*8, dimension(0:n-1):: mgas_t !massa della gas entro un raggio r (considerando NFW+BCG+T non costante)
-    real*8, dimension(0:n-1):: mgas_turb !massa della gas entro un raggio r (considerando NFW+BCG+T non costante+turbolenza)
-    real*8, dimension(0:n-1):: lnrho !logaritmo NATURALE della densità del gas all'equilibrio idrostatico (NFW)
-    real*8, dimension(0:n-1):: lnrho_bcg !logaritmo NATURALE della densità del gas all'equilibrio idrostatico (NFW+BCG)
-    real*8, dimension(0:n-1):: lnrho_t !logaritmo NATURALE della densità del gas all'equilibrio idrostatico (NFW+BCG+T non costante)
-    real*8, dimension(0:n-1):: lnrho_turb !logaritmo NATURALE della densità del gas all'equilibrio idrostatico (NFW+BCG+T non costante+turbolenza)
-    real*8, dimension(0:n-1):: t !profilo radiale di temperatura all'interno dell'ammasso
+    real*8, allocatable, dimension(:):: r, rr !griglie delle coordinate radiali
+    real*8, allocatable, dimension (:):: rho !profilo di densità di NFW
+    real*8, allocatable, dimension (:):: bcg !prfilo di densità di Hernquist
+    real*8, allocatable, dimension (:):: rhogas !profilo di densità del gas (considerando solo NFW)
+    real*8, allocatable, dimension (:):: rhogas_bcg !profilo di densità del gas (considerando NFW+BCG)
+    real*8, allocatable, dimension (:):: rhogas_t !profilo di densità del gas (considerando NFW+BCG+T non costante)
+    real*8, allocatable, dimension (:):: rhogas_turb !profilo di densità del gas (considerando NFW+BCG+T non costante+turbolenza)
+    real*8, allocatable, dimension (:):: mdm !massa della Materia Oscura entro un raggio r
+    real*8, allocatable, dimension (:):: mbcg !massa della Bright Central Galaxy entro un raggio r, profilo di Hernquist (1990)
+    real*8, allocatable, dimension (:):: mgas !massa della gas entro un raggio r (considerando solo NFW)
+    real*8, allocatable, dimension (:):: mgas_bcg !massa della gas entro un raggio r (considerando NFW+BCG)
+    real*8, allocatable, dimension (:):: mgas_t !massa della gas entro un raggio r (considerando NFW+BCG+T non costante)
+    real*8, allocatable, dimension (:):: mgas_turb !massa della gas entro un raggio r (considerando NFW+BCG+T non costante+turbolenza)
+    real*8, allocatable, dimension (:):: lnrho !logaritmo NATURALE della densità del gas all'equilibrio idrostatico (NFW)
+    real*8, allocatable, dimension (:):: lnrho_bcg !logaritmo NATURALE della densità del gas all'equilibrio idrostatico (NFW+BCG)
+    real*8, allocatable, dimension (:):: lnrho_t !logaritmo NATURALE della densità del gas all'equilibrio idrostatico (NFW+BCG+T non costante)
+    real*8, allocatable, dimension (:):: lnrho_turb !logaritmo NATURALE della densità del gas all'equilibrio idrostatico (NFW+BCG+T non costante+turbolenza)
+    real*8, allocatable, dimension (:):: t !profilo radiale di temperatura all'interno dell'ammasso
    
-    real*8, dimension(0:n-1):: zfe !profilo radiale dell'abbondanza di ferro osservata nell'ammasso di Perseo
-    !real*8, dimension(0:n-1):: d !eventuale coefficente di diffusione dipendente dal tempo
-    real*8, dimension(0:n-1):: rhofe !profilo radiale della densità dei ferro nell'ammasso
-    real*8, dimension(0:n-1):: gradfe !gradiente del profilo di abbondanza di ferro 
+    real*8, allocatable, dimension (:):: zfe !profilo radiale dell'abbondanza di ferro osservata nell'ammasso di Perseo
+    !real*8, allocatable, dimension (:):: d !eventuale coefficente di diffusione dipendente dal tempo
+    real*8, allocatable, dimension (:):: rhofe !profilo radiale della densità dei ferro nell'ammasso
+    real*8, allocatable, dimension (:):: gradfe !gradiente del profilo di abbondanza di ferro 
 
+!NUMBER OF POINTS LOGIC (from griglia.f90)
+    n = 1
+    h = 100.0d0 * pc ! initial spacing
+    r_tmp = 0.0d0
+    do while (r_tmp < rmax)
+        r_tmp = r_tmp + h
+        h = f * h
+        n = n + 1
+    end do
+    print*, "Points needed to cover ", rmax/3.086d24, " Mpc: ", n
+
+!ARRAY ALLOCATION
+
+
+
+    
 !EQUILIBRIO IDROSTATICO IN UN AMMASSO DI GALASSIE
     !CREAZIONE DELLA GRIGLIE DELLE DISTANZE, assunta di SPAZIATURA COSTANTE
     !h=(rmax-rmin)/n
