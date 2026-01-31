@@ -2,7 +2,7 @@
 FC = gfortran
 
 # Flags 
-FFLAGS = -O3 -Wall -Wextra -std=f2008
+FFLAGS = -O3 -Wall -Wextra 
 
 # Executable file
 TARGET = simulation
