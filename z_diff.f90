@@ -1,4 +1,4 @@
-!DIFFUSIONE DEL FERRO NEL MEZZO INTRA-AMMASSO
+!IRON DIFFUSION IN THE INTRA-CLUSTER MEDIUM
 !--------------------------------------------
 
 module algoritmi
@@ -147,7 +147,7 @@ module funzioni
         
     end subroutine massa
 
-    subroutine t_r(t, r, n)
+    subroutine t_r(t, r, n) !temperature profile
         integer, intent(in):: n !dimensione della griglia dei raggi
         integer:: i !indice di scorrimento
 
