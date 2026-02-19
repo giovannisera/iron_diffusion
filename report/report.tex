@@ -1,0 +1,522 @@
+\documentclass{article}
+
+
+%IMPORTING PACKAGES
+\usepackage{sectsty}
+\usepackage{graphicx}
+\usepackage[a4paper, total={6.5in, 9in}]{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage[font=footnotesize,labelfont=bf]{caption}
+\captionsetup{justification=centering}
+\captionsetup{font=small}
+\captionsetup[table]{font=small} 
+\usepackage[italian]{babel}
+\usepackage{amsmath}
+\numberwithin{equation}{subsection}
+\usepackage{multirow}
+\usepackage{floatrow}
+\floatsetup[table]{capposition=top}
+\sectionfont{\large}
+\subsectionfont{\large}
+\newenvironment{Figure}
+    {\par\medskip\noindent\minipage{\linewidth}}
+    {\endminipage\par\medskip}
+
+%TITLE SETTINGS
+\title{\Large \textbf{Simulation of Iron diffusion in the ICM}
+}
+
+\author{
+\large \emph{Giovanni Sera$^{1}$\thanks{E-mail: \emph{giovanni.sera@studio.unibo.it}}}
+\\ 
+\small matricola:\textbf{ 1030375}
+\\
+\footnotesize $^{1}$Alma Mater Studiorum - Università di Bologna, Dipartimento di Fisica ed Astronomia
+}
+
+\date{\small{12/02/2025}}
+
+
+\begin{document}
+\pagestyle{fancy}
+
+\maketitle
+\fancyhead[L]{Giovanni Sera}
+\fancyhead[R]{CALCOLO PER L'ASTRONOMIA-PROGETTO 1}
+
+%DESCRIZIONE
+\begin{center}
+\section{DESCRIZIONE}
+\vspace{0.1 cm}
+I wrote this code. This code has github repository.
+This code simulates the diffusion of Iron in 
+the IntraCLuster Medium. the sources of Iron are
+Supernovae type 1a and Stellar Winds. I solve
+the HE equilibroum in spherical coordinates for 
+such gas.\\
+I also implement turbulence.
+\end{center}
+{\footnotesize \textit{A titolo di esempio le immagini sono riferite soltanto alla galassia NGC4536.}}
+
+\subsection{ASSUMPTION AND INITIAL CONDITIONS}
+These is the HE equation 
+\begin{equation}
+    \frac{dp}{dr}=-\frac{GM(<r)}{r^2}\rho
+\end{equation}
+in logarithm and avoiding a dependence and isothermal case.\\
+In case I add turbuluent pressure as I did:
+\begin{equation}
+    \frac{d(p+p_{turb})}{dr}=-\frac{GM(<r)}{r^2}\rho
+\end{equation}
+where $p_{turb}\approx \frac{1}{3}v_{turb}^2$ where the typical
+turbulent velocity value is $v_{turb}\approx[200-400]km/s$ and
+I have assumed a value of 300 km/s
+\begin{equation}
+    \frac{ln\rho _{gas}}{dr}=-\frac{G M(<r)}{r^2} \frac{\mu m_p}{k_b T}
+\end{equation}
+And ensuring that $f_{bar}=0.16$ every time we add a mass component.\\
+with turbulence and a temperature profile
+\begin{equation}
+    \frac{ln\rho _{gas}}{dr}=-\frac{G M(<r)}{r^2} \frac{\mu m_p}{k_b T} - \frac{dlnT}{dr} - \frac{p_{turb(r)}}{p(r)}\frac{dlnp_{turb}}{dr}
+\end{equation}
+first I extimate the non-thermal pressure term and then I solve the equation with that term as a constant.
+This is the diffusion equation due to turbulent diffusion
+\begin{equation}
+    \frac{\partial \rho_{Fe}}{\partial t}=\frac{1}{1.4}\frac{1}{r^2}\frac{\partial(r^2 D(r) \rho \frac{\partial Z_{Fe}}{\partial r})}{\partial r} + S_{Fe}(r,t)
+\end{equation}
+with $Z_{Fe}=\frac{1}{1.4}\frac{\rho _{Fe}}{\rho _{gas}}$.\\
+I have assumed constant Diffusion coefficient $D\approx v_{turb} l $ with l the
+typical turbulence scale-length.\\
+The source is this one:
+\begin{equation}
+    source terms
+\end{equation}
+The initial abundance profile is this one
+\begin{equation}
+    initial abundance profile
+\end{equation}
+but first I have checked just the diffusion on 
+this profile.\\
+Then I have checked just the source on a zero abundance
+initial condition.\\
+where each terms is this.\\
+This is how the equations change if I also assume turbulence.\\
+This is the gravitational potential that is assumed 
+to NFW+BCG and it's 
+\begin{equation}
+    M_{BCG}=\frac{r^2}{(r+\frac{12\times 10^3 pc}{1+\sqrt{2}})^2}10^{12}M_{\odot}
+\end{equation}
+NFW
+\begin{equation}
+    \rho _{dm}(r)=\frac{\rho _{dm,0}}{(\frac{r}{r_s})(1+\frac{r}{r_s})^2}
+\end{equation}
+in our case $M_{virial}\approx M_{dm} \approx 1.2 \times 10^{15} M_{\odot}$ 
+and $\rho _{dm,0}=7.35\times 10 ^{-26} \mathrm{g/cm^3}$ 
+and $r_s=435.7 \mathrm{kpc}$ and $r_{vir}=2.8 \mathrm{Mpc}$.\\
+The mass has been obtained using a staggered grid and 
+\begin{equation}
+    M(<r)=\int_{0}^{r}\rho_{dm}(r) dV= \int_{0}^{r}4 \pi r^2 \rho _{dm} dr
+\end{equation}
+the inital temperature profile is 
+\begin{equation}
+    T(r)=\frac{(\frac{x}/{0.045})^{1.9}+0.45}{(x/0.045d0)**(1.9d0)+1d0}  8.9\times 10^7
+\end{equation}.
+and this is how it looks like in a graph.\\
+I have assumed a constant value for the diffusion coeffiencent.
+
+
+\section{NUMERICAL METHOD}
+The stability, consistency of the method is ensured 
+by the criteria
+\begin{equation}
+    criteria
+\end{equation}
+I use a staggered grid from pc to Mpc with an initial 
+step of pc and a increment factor of f=0000.\\
+We use euler method which is 
+\begin{equation}
+    ln\rho_{j+1/2}=ln\rho_{j-1/2}-\Delta r \frac{G M_j}{r_j^2}\frac{\mu m_p}{k_b T}
+\end{equation}
+for the just source.\\
+We use the Centered derivaritive for Diffusion 
+which is a stable method
+\begin{equation}
+    diffusion in dicretized
+\end{equation}
+
+
+
+\subsection{SOURCES OF IRON} \label{sec:ceph}
+\vspace{0.2 cm}
+These are the results without diffusion.\\
+These are the results with diffusion.\\
+These are the results with turbulence.\\
+The sources of Iron are parametrized in this way
+and they occur in the center of the Cluster.
+\begin{equation}
+    source terms
+\end{equation}
+
+\section{RESULTS}
+These are the result just with the NFW, the only variable
+I asses is the density distribution. In the graph 
+it's showed the initial gas density distribution and you can see
+the evolution.\\
+In an ideal case I would reproduce the REbusco profile
+for Iron Abundance which is obtained from 
+X-rays observations.\\
+I cannot see this until I assume unphysical values
+for the source of irons and the diffusion coefficient.\\
+I also show the amount of Iron Mass and check if 
+it is conserved by the method: these are the results.\\
+
+
+
+\begin{equation} \label{eq:leavitt}
+    M_v=c_1+c_2log_{10}P    
+\end{equation}
+trovata da Leavitt nel 1908. Tramite la \textbf{regressione lineare} ho ottenuto i due parametri della relazione
+$$c_1=-1.21, \ c_2=-2.90$$
+e li ho considerati esatti, senza errore.\\
+Queste particolari stelle sono delle cosiddette \textbf{candele standard} in quanto si prestano come indicatori di distanza nell'Universo; riuscendo a misurare il loro periodo si giunge direttamente al valore della loro luminosià tramite Eq.\ref{eq:leavitt}.\\
+Ho interpolato la curva di luce grazie all'algoritmo della \textbf{spline cubica} (Fig.\ref{fig:spline}) partendo dai dati disponibili. \\
+Per calcolare il periodo di ciascuna stella ho testato le k-soluzioni
+$$3\Delta t_{min} \le P_k \le \frac {t_f-t_0}{2}$$
+con $\Delta$t$_{\mathrm{min}}$ pari alla minima distanza temporale tra due misure fotometriche. Ho associato ad ogni possibile periodo un chi-quadro (Fig.\ref{fig:chi})
+\begin{equation} \label{eq:chi}
+    \chi_k^2=\sum\limits_{i=1}^n\frac{[m_i-f(t_i\pm P_k)]^2}{\sigma_{m_i}}
+\end{equation}ossia la somma degli scarti quadratici, divisi per l'incertezza, tra il valore iniziale misurato di magnitudine apparente e quello previsto dalla spline in seguito alla traslazione in indietro o in avanti di un periodo di test. Ho fatto in modo tale che le traslazioni terminassero nel caso in cui si uscisse dall'intervallo di tempo, evitando quindi delle estrapolazioni. Infine ho scelto come soluzione quella che minimizzava il chi-quadro ridotto.\\
+L'incertezza sul periodo è pari a 
+\begin{equation} \label{eq:per_err}
+    \sigma_P=max\{P(\tilde{\chi}^2+1)-P\}.
+\end{equation}
+Per trovare la magnitudine apparente di ogni stella inizialmente ho calcolato la media dei valori interpolati su intervalli ottenuti campionando il tempo di osservazione con il periodo e a sua volta ogni intervallo con un passo pari a $\frac{\mathrm{P}}{\mathrm{100}}$. Ho associato ad ogni intervallo l'incertezza
+\begin{equation}
+    RMS_k=\sqrt\frac{\sum\limits_{i=1}^{n}(f(t_i)-\Bar{x}_k)^2}{n}.
+\end{equation}
+Infine ho calcolato la media pesata delle diverse stime ottenute.\\
+Il modulo di distanza è pari a 
+\begin{equation} \label{eq:modulo}
+    \mu=m_V-M_V=5log_{10}(\frac{d}{10pc})
+\end{equation}
+da cui la distanza
+\begin{equation} \label{eq:distanza}
+    d=10^{0.2\mu+1} \ pc.
+\end{equation}
+Al calcolo di M$_\mathrm{V}$, $\mu$ e d ho associato un'incertezza grazie alle formule per la propagazione degli errori.\\
+L'analisi in Sec.\ref{sec:ceph} è riportata in Tab.\ref{tab:cefeidi}.
+
+\subsection{LA LEGGE DI HUBBLE-LEMAÎTRE} \label{sec:hubble}
+\vspace{0.2 cm}
+Avendo tre misure della distanza per ciascuna galassia ho calcolato la loro media pesata sulle incertezze.\\
+Le galassie obbedisco alla \textbf{legge di Hubble-Lemaître} (Fig.\ref{fig:hubble}): la loro velocità di recessione è direttamente proporzionale alla loro distanza
+\begin{equation} \label{eq:hubble}
+    v_{rec}=H_0d.        
+\end{equation}
+Ho ricavato H$_0$ per ogni galassia associandogli un'incertezza tramite propagazione degli errori e succesivamente ho calcolato la media pesata, ottenendo
+$$H_0=76.54\pm1.22 \ \frac{km}{s \ Mpc}.$$
+L'analisi in Sec.\ref{sec:hubble} è riportata in Tab.\ref{tab:galassie}.
+
+\subsection{IL MODELLO LAMBDA-CDM}
+\vspace{0.2 cm}
+Il $\Lambda$-CDM è il modello cosmologico più semplice in accordo con le osservazioni e prevede che l'età dell'Universo sia pari a 
+\begin{equation} \label{eq:planck}
+    t_0=\int_{0}^{t_0} \, dt = \frac{1}{H_0}\int_{0}^{\infty} \frac{dz}{(1+z)E(z)^{1/2}},   
+\end{equation}con
+
+    $$E(z)=\Omega_M(1+z)^3+(1-\Omega_M-\Omega_{\Lambda})(1+z)^2+\Omega_{\Lambda}.$$
+
+$\Omega_{\mathrm{M}}$ e $\Omega_{\Lambda}$ sono i parametri di densità del nostro Universo e rappresentano rispettivamente il budget energetico dovuto alla materia e quello dovuto all'energia oscura.\\
+Dopo avere convertito H$_0$
+\begin{equation}\label{eq:miliardi}
+    [H_0]=\frac{km}{s \ Mpc}=31536\times10^{12}\frac{km}{Mpc \ Mldyy}=\frac{31536}{30857\times10^3}Mldyy^{-1}
+\end{equation}
+ho integrato l'Eq.\ref{eq:planck} tramite l'algoritmo della \textbf{quadratura di Gauss} sul quadrato
+$$\Omega=[0,1]\times[0,1].$$
+Nel 2018 grazie al satellite Planck è stata misurata
+$$t_0=13.82\pm0.14 Mld yy.$$
+In Fig.\ref{fig:cosmo} ho evidenziato le coppie [$\Omega_{\mathrm{M}},\Omega_{\Lambda}$] compatibili entro 3$\sigma$ con t$_0$. Nel grafico sono indicate le regioni:
+\begin{enumerate}
+    \item $\Omega_{\mathrm{M}} + \Omega_{\Lambda}=1$, universo con geometria piatta/euclidea;
+    \item $\Omega_{\mathrm{M}} + \Omega_{\Lambda}<1$, universo con geometria iperbolica/aperta;
+    \item $\Omega_{\mathrm{M}} + \Omega_{\Lambda}>1$, universo con geometria sferica/chiusa.
+\end{enumerate}
+
+%CODICE FORTRAN
+\section{CODICE E ALGORITMI}
+\vspace{0.1 cm}
+Ho implementato il problema su un codice \texttt{Fortran90} composto da quattro moduli (\texttt{strumenti}, \texttt{fase\_1}, \texttt{fase\_2}, \texttt{fase\_cosmologia}) ed un programma principale (\texttt{main}) dal quale ho chiamato le diverse subroutine contenute nei moduli sopraccitati e che descriverò nello specifico. \`E di particolare importanza la doppia iterazione con \texttt{DO} che ricopre un'ampia parte del programma permettendomi di ripetere l'analisi per ognuna delle trenta stelle e successivamente per ognuna delle dieci galassie.
+\subsection{mod-Strumenti}
+\vspace{0.2 cm}
+Il modulo contiene la subroutine \texttt{sorting} che permette l'ordinamento di un vettore singolo o anche di due o tre vettori i cui elementi vengono disposti rispettando l'ordine del primo. L'ordinamento è stato necessario per applicare l'algoritmo della spline; l'ho infine usato per trovare il minimo del chi-quadro quindi il periodo di ogni singola cefeide. \\
+La subroutine \texttt{w\_mean} calcola la media pesata  sulle incertezze ed il suo errore associato (Eq.\ref{eq:w_mean}); l'ho sfruttata per il calcolo della magnitudine apparente, della distanza delle galassie e la costante di Hubble.
+\begin{equation} \label{eq:w_mean}
+    \Bar{x}_W=\frac{\sum\limits_{i=1}^{n}w_ix_i}{\sum\limits_{i=1}^{n}w_i}, \ \ \ 
+    \sigma_{\Bar{x}_W}=\frac{1}{\sqrt{\sum\limits_{i=1}^{n}w_i}}.
+\end{equation}
+
+\subsection{sub-Gauss-Jordan} \label{subsec:gauss}
+\vspace{0.2 cm}
+Data la matrice completa dei coefficienti di un sistema con n equazioni ed n incognite
+\begin{equation}\label{eq:gauss-jordan}
+    \begin{pmatrix}
+        a_{11}  &  \cdots  &  a_{1n}  &  c_1    \\
+        \vdots  &  \ddots  &  \vdots  &  \vdots \\
+        a_{n1}  &  \cdots  &  a_{nn}  &  c_n    
+    \end{pmatrix}
+\end{equation}
+dopo avere normalizzato le righe all'unità si procede applicando l'eliminazione di Gauss su ognuna di loro, sia sopra che sotto la diagonale principale. In tal modo riduco la matrice iniziale alla nuova matrice
+\begin{equation}
+    \begin{pmatrix}
+        1  &    0   &  0  &  \tilde{c}_1 \\
+        0  & \ddots &  0  &  \vdots      \\
+        0  &    0   &  1  &  \tilde{c}_n
+    \end{pmatrix}
+\end{equation}
+dalla quale posso estrarre le soluzioni del problema leggendo l'ultima colonna.
+
+\subsection{sub-Fit Lineare}\label{sub:lin}
+\vspace{0.2 cm}
+Scelto il modello lineare 
+\begin{equation}
+    f=c_1+c_2x
+\end{equation}
+ho minimizzato la somma degli scarti quadratici tra il modello e i dati disponibili
+\begin{equation}\label{eq:scarti}
+    S_r=\sum\limits_{i=1}^{n}(y_i-c_1-c_2x_i)^2.
+\end{equation}
+Si dimostra che la ricerca delle soluzioni che annullano il gradiente corrisponde a trovare il minimo della Eq.\ref{eq:scarti}:
+\begin{equation} \label{eq:fit_lin}
+    \nabla S_r=0 \Leftrightarrow 
+    \left\{
+    \begin{array}{l}
+        \frac{\partial S_r}{\partial c_1}=-2\sum\limits_{i=1}^{n}(y_i-c_1-c_2x_i)=0
+        \\
+        \frac{\partial S_r}{\partial c_2}=-2\sum\limits_{i=1}^{n}x_i(y_i-c_1-c_2x_i)=0 
+    \end{array}
+    \right.
+\end{equation}
+Il Sis.\ref{eq:fit_lin} comporta la risoluzione del seguente sistema lineare algebrico
+\begin{equation} \label{sis:fit_lin}
+    \begin{pmatrix}
+         N  &  \sum\limits_{i=1}^{n}x_i
+         \\
+         \sum\limits_{i=1}^{n}x_i  &  \sum\limits_{i=1}^{n}x_i^2 
+    \end{pmatrix} %times
+    \begin{pmatrix}
+         c_1\\
+         c_2 
+    \end{pmatrix} = 
+    \begin{pmatrix}
+         \sum\limits_{i=1}^{n}y_i\\
+         \sum\limits_{i=1}^{n}x_iy_i 
+    \end{pmatrix}
+\end{equation}
+di cui ho trovato le soluzioni utilizzando l'algoritmo di Gauss-Jordan descritto nella Sottosez.\ref{subsec:gauss}.\\
+La subroutine scrive il Sis.\ref{sis:fit_lin} e usa \texttt{jordan} per trovarne le soluzioni.
+
+\subsection{sub-Spline Cubica}
+\vspace{0.2 cm}
+L'algoritmo della spline cubica permette di individuare un insieme di polinomi interpolatori di terzo grado, uno per ogni intervallo del set di dati considerato, che è stato prima ordinato, a fine di interpolarlo. Anziché trovare i quattro coefficienti di ogni polinomio interpolatore, quindi per ogni intervallo, questo problema può essere ridotto alla ricerca del valore delle derivate seconde nei punti dati. \\
+Infatti, essendo il polinomio di terzo grado la sua derivata seconda è una retta e può essere scritta come polinomio di Lagrange al primo ordine
+\begin{equation} \label{eq:lagrange}
+    f''_i(x)=f''(x_{i-1})\frac{x-x_i}{x_{i-1}-x_i}+f''(x_i)\frac{x-x_{i-1}}{x_i-x_{i-1}}.
+\end{equation}
+La funzione è tale che sia continua fino al secondo ordine di derivazione; viene posta una condizione aggiuntiva di annullamento della derivata seconda agli estremi dell'intervallo, detta di spline naturale.\\
+Integrando due volte la Eq.\ref{eq:lagrange} e scegliendo le due costanti di integrazione in modo tale da soddisfare il passaggio della funzione nei nodi della griglia dei dati, ottengo 
+\newpage
+$$f_i(x)=\frac{f''(x_{i-1}}{6(x_-x_{i-1})}(x_i-x)^3+\frac{f''(x_i)}{6(x_i-x_{i-1})}(x-x_{i-1})^3+$$
+\begin{equation}\label{eq:interpolazione}
+    [\frac{f(x_{i-1})}{(x_i-x_{i-1})}-\frac{f''(x_{i-1})(x_i-x_{i-1})}{6}](x_i-x)+[\frac{f(x_i)}{(x_i-x_{i-1})}-\frac{f''(x_i)(x_i-x_{i-1})}{6}](x-x_{i-1}). 
+\end{equation}
+Derivando la funzione precedente e ponendo la continuità della derivata prima nei nodi ottengo il sistema di equazioni
+\begin{equation} \label{eq:spline}
+    e_if''(x_{i-1})+r_if''(x_i)+g_if''(x_{i+1})=c_i
+\end{equation}
+con:\\
+$e_i=(x_i-x_{i-1})$,\\
+$r_i=2(x_{i+1}-x_{i-1})$,\\
+$g_i=(x_{i+1}-x_i)$,\\
+$e_i=\frac{6}{(x_{i+1}-x_i)}[f(x_{i+1})-f(x_i)]+\frac{6}{(x_i+x_{i-1})}[f(x_{i-1}-f(x_i)]$.\\
+\\
+La subroutine si occupa di scrivere il Sis.\ref{eq:spline}, ossia la matrice tridiagonale dei coefficienti e il vettore dei termini noti. Quindi in forma matriciale
+\begin{equation}\label{eq:tridiagonal}
+      \begin{pmatrix}
+          1   &   0    &    0    &    0    &    0    \\
+          e_1 &  r_1   &   g_1   &    0    &    0    \\
+          0   & \ddots & \ddots  & \ddots  &    0    \\
+           0  &    0   & e_{n-1} & r_{n-1} & g_{n-1} \\
+           0  &   0    &    0    &    0    &    1
+      \end{pmatrix} %times
+      \begin{pmatrix}
+          f''_0 \\
+          \vdots\\
+          \vdots\\
+          \vdots\\
+          f''_n
+      \end{pmatrix}=
+      \begin{pmatrix}
+          0      \\
+          c_1    \\
+          \vdots \\
+          c_{n-1}\\
+          0
+      \end{pmatrix}
+\end{equation}
+le cui soluzioni, che corrispondono alle derivate seconde in ogni punto della griglia di dati, sono ottentute tramite \texttt{jordan} e inserite nella Eq.\ref{eq:interpolazione} per trovare i valori della funzione (la formula è stata inserita nella subroutine \texttt{inter} che prima determina a quale intervallo appartiene il dato su cui voglio interpolare e poi ne calcola il valore di $f$ corrispondente).\\
+La spline è stata necessaria per tracciare le curve di luce delle cefeidi ma anche per il calcolo dell'errore sul periodo.
+
+
+\subsection{sub-Quadratura di Gauss}
+\vspace{0.2 cm}
+La subroutine implementa il metodo della quadratura di Gauss per l'integrazione di funzioni. La formula, detta di Gauss-Legendre, per n punti è
+\begin{equation} \label{eq:gauss_int}
+    I\approx\sum\limits_{i=1}^{n}c_if(x_i)
+\end{equation} 
+e ho scelto il caso n=4 per cui si dimostra che si ottengono i punti 
+$$x_{1,2}=\pm\sqrt{\frac{3}{7}-\frac{2}{7}\sqrt{\frac{6}{5}}}, \ \ \ x_{3,4}=\pm\sqrt{\frac{3}{7}+\frac{2}{7}\sqrt{\frac{6}{5}}}$$
+ed i pesi
+$$c_{1,2}=\frac{18+\sqrt{30}}{36}, \ \ \ c_{3,4}=\frac{18-\sqrt{30}}{36}.$$
+La Eq.\ref{eq:gauss_int} con i punti ed i pesi scritti sopra vale nel caso in cui integro la funzione in esame nell'intervallo [-1,1]. \`E dunque necessario, prima di integrare, applicare il seguente cambio di variabile:
+\begin{equation}
+    x=\frac{(x_{n-1}-x_0)+(x_{n-1}-x_0)x_d}{2}, \ \ \ dx=\frac{(x_{n-1}-x_0)}{2}dx_d.
+\end{equation}
+L'Eq.\ref{eq:planck} presenta un integrale improprio, pertanto, per linearità dell'integrale, l'ho separato in
+\begin{equation}
+    \int_0^{1}+\int_1^{\infty}
+\end{equation}
+Ho integrato il primo addendo utilizzando direttamente la subroutine \texttt{quadratura}, applicandola alla funzione integranda nella Eq.\ref{eq:planck} (scritta all'interno del codice nella funzione \texttt{integranda1}); prima di applicare la subroutine al secondo addendo ho utilizzato il seguente cambio di variabile
+\begin{equation}
+    z=\frac{1}{t}, \ \ \ dz=-\frac{1}{t^2}dt
+\end{equation}
+che mi ha permesso di sciverlo come
+\begin{equation}\label{eq:int2}
+    \int_1^{\infty}=\frac{1}{H_0}\int_0^{1}\frac{1}{t^2}f(\frac{1}{t})dt.
+\end{equation}
+Ho implementato l'integranda della Eq.\ref{eq:int2} all'interno del codice nella funzione \texttt{integranda2}.
+\vspace{1 cm}
+
+%RISULTATI
+\section{RISULTATI} \label{sec:risultati}
+\vspace{0.1 cm}
+\subsection{Relazione Periodo-Luminosità}
+Come si è visto nella Sottosez.\ref{sub:lin}, determinare i parametri del modello lineare comporta l'applicazione del metodo di Gauss-Jordan che è un metodo esatto e causa errori nelle soluzioni dovuti alla sola approssimazione (\textit{round-off}).\\
+I dati in nero in Fig.\ref{fig:per_mag}, ossia le cefeidi analizzate in questo progetto, rispettano il modello in Eq.\ref{eq:fit_lin} tanto che gli errori possono considerarsi trascurabili; essi sono circa mille volte più piccoli dei rispettivi dati P e M$_\mathrm{V}$ (Tab.\ref{tab:cefeidi}).
+\begin{Figure}
+    \centering
+    \includegraphics[width=17cm]{images/1_per-mag.png}
+    \captionof{figure}{Il grafico mostra la relazione log$_{10}$P vs. M$_\mathrm{V}$. \`E presente il fit-lineare M$_\mathrm{V}$=c$_1$+c$_2$ log$_{10}$P per cui ho trovato c$_1$=-1.21 e c$_2$=-2.90. Ho plottato i dati del file \texttt{ceph\_catalog.txt} e i risultati della mia analisi con le relative barre di errore. Nel grafico a destra è evidenziato il gruppo delle cefeidi analizzate.}
+    \label{fig:per_mag}
+\end{Figure}
+\newpage
+\subsection{Curve di Luce-Calcolo del Periodo}
+La spline, a differenza dei metodi di interpolazione su un unico intervallo con un polinomio di ordine elevato (e.g. Polinomi di Newton/Lagrange), fornisce un andamento più smussato della funzione, essendo meno sensibile a rapidi cambiamenti nei dati.\\
+Utilizzando l'interpolazione polinomiale di Lagrange per scrivere la derivata seconda (Eq.\ref{eq:lagrange}), commetto, su ogni intervallino, un errore pari a 
+\begin{equation}
+    R_n=f''_{n+1}(x)-f''_{n}(x)
+\end{equation}
+con n che indica l'ordine del polinomio. In questo caso il polinomio, ossia la derivata seconda, è una retta visto che sto utilizzando la spline cubica, quindi n=1.\\
+Per stimare l'errore avrei allora bisogno anche della derivata seconda scritta come polinomio di Lagrange al secondo ordine, espandendo la Eq.\ref{eq:lagrange}. Dovrei dunque utilizzare anche una spline al quarto ordine.\\
+Tuttavia, come mostrano le curve di luce in Fig.\ref{fig:spline}, le imperfezioni sono minime, l'andamento della funzione è smussato e la periodicità è apprezabile.
+\begin{Figure}
+    \includegraphics[width=16cm]{images/2_curve_di_luce_4536.png}
+    \captionof{figure}{Le curve di luce ricavate tramite spline cubica (in grigio) per le cefeidi \textit{a}, \textit{b}, \textit{c} di NGC4536.}
+    \label{fig:spline}
+\end{Figure}
+Ho usato la spline inversa, scambiando le ascisse con le ordinate, per calcolare l'incertezza sul periodo.\\
+Al fine di invertire la relazione ho reso monotona la parte di curva del $\tilde{\chi}^2$ (Fig.\ref{fig:chi}) separatamente a destra e a sinistra del periodo (corrispondente al minimo della funzione).\\
+Osservando i grafici di tutte le cefeidi ho notato come fosse sufficiente uno spostamento di 0.2Jd per coprire la zona in cui ad un dato P$_\mathrm{k}$ associo il valore $\tilde{\chi}^2+1$ (\ref{eq:per_err}) e per mantenere la monotonia della relazione. 
+\begin{Figure}
+    \includegraphics[width=16cm]{images/3_chi-quadro_4536.png}
+    \captionof{figure}{Andamento del chi-quadro ridotto in funzione del possibile periodo delle cefeidi \textit{a}, \textit{b}, \textit{c} di NGC4536. Il valore che minimizza la funzione corrisponde al periodo della stella. A partire da questa funzione ho ricavato anche l'errore ad esso associato.}
+    \label{fig:chi}
+\end{Figure}
+\newpage
+\topskip0pt
+\vspace*{\fill}
+\begin{table}[h]
+\begin{tabular}{cccccc}
+\hline\hline
+Cefeide  & P          & m$_v$          & M$_v$            & mod            & d        \\ 
+ & (Jd) & & & & (Mpc) \\
+ \hline
+NGC0925a & 11.78$\pm0.02$ & 25.44$\pm0.25$ & -4.312$\pm0.003$ & 29.80$\pm0.25$ & 8.91$\pm1.04$  \\
+NGC0925b & 18.31$\pm0.06$ & 25.00$\pm0.30$ & -4.870$\pm0.004$ & 30.00$\pm0.30$ & 9.41$\pm1.11$  \\
+NGC0925c & 8.36$\pm0.03$  & 26.20$\pm0.08$ & -3.880$\pm0.005$ & 30.07$\pm0.08$ & 10.33$\pm0.40$ \\
+NGC1365a & 21.12$\pm0.04$ & 26.30$\pm0.23$ & -5.050$\pm0.003$ & 31.33$\pm0.23$ & 18.50$\pm2.00$ \\
+NGC1365b & 9.36$\pm0.03$  & 27.31$\pm0.40$ & -4.023$\pm0.003$ & 31.33$\pm0.36$ & 18.44$\pm3.07$ \\
+NGC1365c & 14.61$\pm0.08$ & 26.73$\pm0.11$ & -4.583$\pm0.007$ & 31.31$\pm0.11$ & 18.30$\pm0.93$ \\
+NGC1425a & 13.00$\pm0.01$ & 28.12$\pm0.12$ & -4.432$\pm0.001$ & 32.60$\pm0.12$ & 32.35$\pm1.75$ \\
+NGC1425b & 15.30$\pm0.07$ & 27.10$\pm0.11$ & -4.642$\pm0.006$ & 31.73$\pm0.10$ & 22.22$\pm1.08$ \\
+NGC1425c & 19.00$\pm0.07$ & 26.64$\pm0.14$ & -4.906$\pm0.005$ & 31.60$\pm0.14$ & 20.41$\pm1.27$ \\
+NGC2403a & 7.80$\pm0.10$  & 23.80$\pm0.08$ & -3.790$\pm0.020$  & 27.60$\pm0.08$ & 3.24$\pm0.12$  \\
+NGC2403b & 14.45$\pm0.05$ & 23.21$\pm0.05$ & -4.570$\pm0.005$ & 27.80$\pm0.05$ & 3.60$\pm0.08$  \\
+NGC2403c & 11.11$\pm0.04$ & 23.34$\pm0.22$ & -4.240$\pm0.004$ & 27.60$\pm0.22$ & 3.27$\pm0.34$  \\
+NGC2541a & 19.11$\pm0.08$ & 25.34$\pm0.14$ & -4.921$\pm0.005$ & 30.26$\pm0.14$ & 11.30$\pm0.74$ \\
+NGC2541b & 15.22$\pm0.08$ & 25.70$\pm0.15$ & -4.634$\pm0.007$ & 30.30$\pm0.15$ & 11.50$\pm0.80$ \\
+NGC2541c & 9.00$\pm0.02$  & 26.10$\pm0.13$ & -3.970$\pm0.004$ & 30.06$\pm0.12$ & 10.30$\pm0.60$ \\
+NGC3198a & 15.30$\pm0.10$ & 26.00$\pm0.04$ & -4.640$\pm0.008$ & 30.52$\pm0.04$ & 12.72$\pm0.22$ \\
+NGC3198b & 14.00$\pm0.08$ & 26.25$\pm0.15$ & -4.510$\pm0.007$ & 30.80$\pm0.15$ & 14.20$\pm1.00$ \\
+NGC3198c & 11.20$\pm0.03$ & 26.00$\pm0.05$ & -4.250$\pm0.004$ & 30.14$\pm0.05$ & 10.70$\pm0.30$ \\
+NGC3621a & 10.10$\pm0.04$ & 25.10$\pm0.21$ & -4.120$\pm0.005$ & 29.21$\pm0.21$ & 7.00$\pm0.70$  \\
+NGC3621b & 21.50$\pm0.14$ & 24.13$\pm0.04$ & -5.070$\pm0.008$ & 20.20$\pm0.04$ & 7.00$\pm0.14$  \\
+NGC3621c & 14.60$\pm0.06$ & 24.60$\pm0.05$ & -4.581$\pm0.005$ & 29.13$\pm0.05$ & 6.71$\pm0.15$  \\
+NGC4535a & 8.23$\pm0.04$  & 27.20$\pm0.23$ & -3.861$\pm0.006$ & 31.04$\pm0.24$ & 16.20$\pm1.75$ \\
+NGC4535b & 10.41$\pm0.14$ & 27.00$\pm0.01$ & -4.160$\pm0.020$ & 31.00$\pm0.02$ & 16.00$\pm0.13$ \\
+NGC4535c & 17.75$\pm0.04$ & 26.20$\pm0.24$ & -4.830$\pm0.003$ & 31.01$\pm0.24$ & 16.00$\pm1.74$ \\
+NGC4536a & 16.80$\pm0.10$ & 26.20$\pm0.20$ & -4.756$\pm0.007$ & 30.93$\pm0.16$ & 15.41$\pm1.12$ \\
+NGC4536b & 12.24$\pm0.05$ & 26.54$\pm0.11$ & -4.361$\pm0.005$ & 30.90$\pm0.11$ & 15.14$\pm1.00$ \\
+NGC4536c & 18.60$\pm0.04$ & 26.00$\pm0.11$ & -4.890$\pm0.003$ & 30.56$\pm0.11$ & 13.00$\pm1.00$ \\
+NGC4639a & 28.43$\pm0.08$ & 26.01$\pm0.03$ & -5.422$\pm0.004$ & 31.44$\pm0.03$ & 19.41$\pm0.30$ \\
+NGC4639b & 17.04$\pm0.08$ & 27.00$\pm0.20$ & -4.780$\pm0.006$ & 31.77$\pm0.20$ & 22.70$\pm2.00$ \\
+NGC4639c & 15.10$\pm0.03$ & 27.20$\pm0.24$ & -4.624$\pm0.002$ & 31.83$\pm0.23$ & 23.26$\pm2.53$ \\ \hline
+\end{tabular}
+\caption{Dati delle Cefeidi osservate (\textit{mod} indica il modulo di distanza, \textit{d} la distanza).}
+\label{tab:cefeidi}
+\end{table}
+\vspace*{\fill}
+
+\subsection{Legge di Hubble-Lemaître}
+\begin{Figure}
+    \centering
+    \includegraphics[width=10cm]{images/4_hubble.png}
+    \captionof{figure}{Il grafico mostra la legge di Hubble-Lemaître trovata per ognuna della galassie in esame. Sono in evidenza il valore massimo, minimo e medio (pesato) di H$_0$ (Tab.\ref{tab:galassie}).}
+    \label{fig:hubble}
+\end{Figure}
+
+\begin{table}[h]
+\begin{tabular}{cccc}
+\hline\hline
+Galassia & d              & $\mathrm v_{\mathrm rec}$       & H$_0$                      \\
+         & (Mpc)          & (km \ s$^{-1}$) & (km s$^{-1}$ Mpc$^{-1}$) \\ \hline
+NGC0925  & 10.10$\pm0.40$ & 664$\pm290$     & 66$\pm29$                  \\
+NGC1356  & 18.34$\pm0.81$ & 1594$\pm437$    & 87$\pm24$                  \\
+NGC1425  & 23.43$\pm0.80$ & 1473$\pm8$      & 63$\pm2$                   \\
+NGC2403  & 3.47$\pm0.07$  & 278$\pm85$      & 80$\pm25$                  \\
+NGC2541  & 10.87$\pm0.40$ & 714$\pm222$     & 66$\pm21$                  \\
+NGC3198  & 12.00$\pm0.20$ & 772$\pm76$      & 65$\pm6$                   \\
+NGC3621  & 6.83$\pm0.10$  & 609$\pm411$     & 90$\pm60$                  \\
+NGC4535  & 15.60$\pm0.13$ & 1444$\pm34$     & 93$\pm2$                   \\
+NGC4536  & 14.11$\pm0.50$ & 1423$\pm40$     & 101$\pm4$                  \\
+NGC4639  & 19.52$\pm0.30$ & 1403$\pm45$     & 72$\pm3$                   \\ \hline
+\end{tabular}
+\caption{Galassie in cui sono state osservate le Cefeidi (\textit{d} indica la distanza).}
+\label{tab:galassie}
+\end{table}
+\newpage
+\subsection{Lambda-CDM}
+La quadratura di Gauss fornisce risultati esatti per funzioni integrande polinomiali fino all'ordine $2n-1$ ($n$ è il numero di punti) poiché per ricavare i $2n$ parametri della Eq.\ref{eq:gauss_int} ho dovuto utilizzare altrettante condizioni, quindi polinomi fino al grado $2n-1$ . In questo caso l'integranda non è una funzione polinomiale dunque commetto un errore di troncamento
+\begin{equation}
+    E_t\approx f^{(8)}
+\end{equation}
+essendo n=4.
+\begin{Figure}
+    \centering
+    \includegraphics[width=8cm]{images/5_parameters.png}
+    \captionof{figure}{Curva di livello t$_0$=13.82$\pm$0.14 Mld yy secondo la stima del 2018 ad opera del satellite Planck con H$_0$=76.54$\pm$1.22 km s$^{-1}$ Mpc$^{-1}$ trovata nel corso di questo progetto (Eq.\ref{eq:planck}) Sono in evidenza le coppie dei parametri di densità nei modelli di Universo piatto, sferico o iperbolico compatibili entro 3$\sigma$.}
+    \label{fig:cosmo}
+\end{Figure}
+\end{document}
+
