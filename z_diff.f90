@@ -1,5 +1,5 @@
 !IRON DIFFUSION IN THE INTRA-CLUSTER MEDIUM
-!--------------------------------------------
+!---------------------------------------------
 
 module algoritmi
     implicit none
@@ -180,6 +180,7 @@ program DIFFUSIONE_METALLI
     implicit none
     integer:: n !grid points
     integer:: i !list indexing
+    integer:: k !index for r=100kpc
 
     real*8, parameter:: e=2.71828d0 !numero di Nepero, usato per la conversione da logarirmo naturale a logaritmo in base 10
     real*8, parameter:: msun=1.989d33
@@ -199,11 +200,17 @@ program DIFFUSIONE_METALLI
     real*8:: dcost !coefficiente di diffusione costante
     real*8:: dt !passo temporale
     real*8:: time !variabile di controllo del tempo 
+    real*8:: t_fin !integration time for diffusion
+    real*8:: t_diff !numerical diffusion time from just diffusion iron peak analysis
     real*8:: fi, fip1 !funzione f, vedi relazione nella posizione i e nella posizione i+1 
     real*8:: div !divergenza del flusso del ferro
     real*8:: source !sorgente di ferro
+    real*8:: zfe_obs_peak
+    real*8:: peak_width !iron peak width
     real*8:: snu !quantificatore del contributo nell'arricchimento di ferro da parte delle SNIa 
     real*8:: a !parametro a nel profilo di Hernquist
+    real*8:: m_fe_source_theo
+    real*8:: m_fe_source_diff_theo
 
     real*8, allocatable, dimension(:):: r, rr !griglie delle coordinate radiali
     real*8, allocatable, dimension (:):: rho !profilo di densità di NFW
@@ -218,6 +225,10 @@ program DIFFUSIONE_METALLI
     real*8, allocatable, dimension (:):: mgas_bcg !massa della gas entro un raggio r (considerando NFW+BCG)
     real*8, allocatable, dimension (:):: mgas_t !massa della gas entro un raggio r (considerando NFW+BCG+T non costante)
     real*8, allocatable, dimension (:):: mgas_turb !massa della gas entro un raggio r (considerando NFW+BCG+T non costante+turbolenza)
+    real*8, allocatable, dimension (:):: m_fe_source_diff !massa di ferro entro un raggio r (considering source and diffusion)
+    real*8, allocatable, dimension (:):: m_fe_diff !massa di ferro entro un raggio r (considering source and diffusion)
+    real*8, allocatable, dimension (:):: m_fe_diff_theo !theoretical massa di ferro entro un raggio r (considering source and diffusion)
+    real*8, allocatable, dimension (:):: m_fe_source !massa teorica di ferro entro un raggio r (considering just source)
     real*8, allocatable, dimension (:):: lnrho !logaritmo NATURALE della densità del gas all'equilibrio idrostatico (NFW)
     real*8, allocatable, dimension (:):: lnrho_bcg !logaritmo NATURALE della densità del gas all'equilibrio idrostatico (NFW+BCG)
     real*8, allocatable, dimension (:):: lnrho_t !logaritmo NATURALE della densità del gas all'equilibrio idrostatico (NFW+BCG+T non costante)
@@ -245,7 +256,8 @@ program DIFFUSIONE_METALLI
     allocate(rho(0:n-1), bcg(0:n-1))
     allocate(rhogas(0:n-1), rhogas_bcg(0:n-1), rhogas_t(0:n-1), rhogas_turb(0:n-1))
     allocate(mdm(0:n-1), mbcg(0:n-1))
-    allocate(mgas(0:n-1), mgas_bcg(0:n-1), mgas_t(0:n-1), mgas_turb(0:n-1))
+    allocate(mgas(0:n-1), mgas_bcg(0:n-1), mgas_t(0:n-1), mgas_turb(0:n-1), m_fe_source_diff(0:n-1), &
+                        m_fe_source(0:n-1), m_fe_diff(0:n-1), m_fe_diff_theo(0:n-1))
     allocate(lnrho(0:n-1), lnrho_bcg(0:n-1), lnrho_t(0:n-1), lnrho_turb(0:n-1))
     allocate(t(0:n-1), zfe(0:n-1), rhofe(0:n-1), gradfe(0:n-1))
     
@@ -261,10 +273,15 @@ program DIFFUSIONE_METALLI
     h=100*pc !prima distanza tra i punti della griglia
     r(0)=rmin
     rr(0)=rmin+h/2
+    k=0
     do i=1, n-1
         r(i)=r(i-1)+h
         h=1.005d0*h 
         rr(i)=r(i)+h/2
+        
+        if (r(i) >= 100.0d3*pc .and. k == 0) then
+        k = i
+    endif
     enddo
 
     !open(1, file="r.txt") !file con la griglia delle distanze in Kparsec
@@ -407,6 +424,7 @@ program DIFFUSIONE_METALLI
     
 
 !EQUAZIONE DI DIFFUSIONE DELLA DENSITA' DI FERRO
+    !###1
     !LA DENSITA' DEL GAS E' ASSUNTA ESSERE QUELLA CALCOLATA CONSIDERANDO NFW+BCG ED IL PROFILO DI TEMPERATURA (rhogas_t)
     !CREAZIONE DEL PROFILO DI METALLICITA' OSSERVATO NELL'AMMASSO DI PERSEO 
     open(14, file="zobs.txt")
@@ -416,13 +434,17 @@ program DIFFUSIONE_METALLI
         write(14,*) log10(rr(i)/(pc*1d3)), zfe(i)/zsol
     enddo 
     close(14)
+    zfe_obs_peak=zfe(2)
+    call massa(m_fe_diff_theo, rhofe, r, n)
 
     dcost=1.32d29 !coefficiente di diffusione costante (cgs, velocità per spazio tipiche della turbolenza 10^2km/s e 10kpc)
     dt=0.5d0*(100*pc)**2/(2d0*dcost) !step temporale scelto minore del rapporto tra il quadrato del minimo step spaziale (100pc) e il minimo del coefficiente di diffusione (in questo caso costante)
     !print*, dt/(3.14d7), 5d9/(dt/3.14d7)
     !ASSUMO COME PROFILO INIZIALE QUELLO OSSERVATO NELL'AMMSSO DI PERSEO E TRASCURO LA SORGENTE DI METALLI
     time=0.d0
-    do while (time.le.5d9*3.14d7) !integra per 5 miliardi di anni FARE CINQUE SALVATAGGI DEL PROFILO DI DENSITA' IN CORRISPONDENZA DEI PASSI DA 1Gyr!!!
+    t_fin=9.d9*3.14d7
+    t_diff=-1.0d0
+    do while (time.le.t_fin) !integra per 5 miliardi di anni FARE CINQUE SALVATAGGI DEL PROFILO DI DENSITA' IN CORRISPONDENZA DEI PASSI DA 1Gyr!!!
         gradfe(0)=0.d0
         gradfe(n-1)=0.d0
 
@@ -445,9 +467,17 @@ program DIFFUSIONE_METALLI
             !rhofe(i)=rhofe(i)+dt*lhs
         enddo
 
+        !numerical iron mass
+        call massa(m_fe_diff, rhofe, r, n)
+
         do i=1, n-2 !creazione del dato iniziale per il passo temporale successivo
             zfe(i)=1.4d0*rhofe(i)/rhogas_t(i)
         enddo
+
+        if (zfe(2) <= zfe_obs_peak/1.5d0 .and. t_diff<0.0d0) then
+            t_diff=time
+        endif
+
         !condizioni di outflow
         rhofe(0)=rhofe(1)
         rhofe(n-1)=rhofe(n-2)
@@ -463,6 +493,18 @@ program DIFFUSIONE_METALLI
     enddo
     close(15)
 
+    open(15, file="m_fe_diff.txt")
+    write(15,*) "JUST DIFFUSION with D=", dcost, "(cgs) for t=", t_fin/(3.14d16), "Gyrs"
+    write(15,*) "Numerical diffusion timescale t_{diff}=", t_diff/(3.14d16), "Gyrs"
+    write(15,*) "Numerical iron mass at 100kpc",  10**(log10(m_fe_diff(k)/msun)-8),"10^8 Solar Masses"
+    write(15,*) "Theoretical iron mass from the initial profile at 100kpc",  &
+                    10**(log10(m_fe_diff_theo(k)/msun)-8),"10^8 Solar Masses"
+    write(15,*) "Total numerical iron mass",  10**(log10(m_fe_diff(n-2)/msun)-8),"10^8 Solar Masses"
+    write(15,*) "Total theoretical iron mass from the initial profile", 10**(log10(m_fe_diff_theo(n-1)/msun)-8),"10^8 Solar Masses"
+    close(15)
+
+
+    !###2
     !ASSUMO L'ASSENZA DI UN PROFILO INIZIALE DI FERRO E L'ASSENZA DI DIFFUSIONE
     !CONSIDERO UNA SORGENTE DI FERRO DOVUTA ALLE SNIa E AI VENTI STELLARI
     dcost=1.32d29 !coefficiente di diffusione costante (cgs, velocità per spazio tipiche della turbolenza 10^2km/s e 10kpc)
@@ -476,7 +518,8 @@ program DIFFUSIONE_METALLI
     enddo
 
     time=0.d0
-    do while (time.le.1d9*3.14d7) !integra per 5 miliardi di anni FARE CINQUE SALVATAGGI DEL PROFILO DI DENSITA' IN CORRISPONDENZA DEI PASSI DA 1Gyr!!!
+    t_fin=5d9*3.14d7
+    do while (time.le.t_fin) !integra per 5 miliardi di anni FARE CINQUE SALVATAGGI DEL PROFILO DI DENSITA' IN CORRISPONDENZA DEI PASSI DA 1Gyr!!!
 
         do i=0, n-1 !ciclo sulla distanza radiale per la costruzione del profilo radiale al tempo t+dt
             div=0d0 !assenza di diffusione
@@ -484,6 +527,9 @@ program DIFFUSIONE_METALLI
             call diff(lhs, div, source) 
             call ftcs(rhofe(i), rhofe(i), lhs, dt) !costruzione del nuovo profilo di densità al tempo t+dt
         enddo
+
+        !numerical iron mass
+        call massa(m_fe_source, rhofe, r, n)
 
         do i=0, n-1 !creazione del dato iniziale per il passo temporale successivo
             zfe(i)=1.4d0*rhofe(i)/rhogas_t(i)
@@ -498,20 +544,40 @@ program DIFFUSIONE_METALLI
         time=time+dt !faccio un passo temporale
     enddo
 
+    peak_width=0.0d0
+
+    do i=0, n-1
+        if (m_fe_source(i) >= m_fe_source(n-2)/2.0d0) then 
+            peak_width= rr(i)
+            exit
+        endif
+    enddo
+
     open(16, file="source.txt")
     do i=2, n-1
         write(16,*) log10(rr(i)/(pc*1d3)), zfe(i)/zsol, log10(bcg(i)) !prova del profilo di Hernquist
     enddo
     close(16)
+    
+    m_fe_source_theo=(6d-23+snu*3.13d-21)*mbcg(n-1)*t_fin
+    open(16, file="m_fe_source.txt")
+    write(16,*) "JUST SOURCE with SNu=", snu, "for t=", t_fin/(3.14d16), "Gyrs"
+    write(16,*) "Numerical iron mass at 100kpc",  10**(log10(m_fe_source(k)/msun)-8),"10^8 Solar Masses"
+    write(16,*) "Total numerical iron mass",  10**(log10(m_fe_source(n-2)/msun)-8),"10^8 Solar Masses"
+    write(16,*) "Total analytical iron mass from the sources", 10**(log10(m_fe_source_theo/msun)-8),"10^8 Solar Masses"
+    write(16,*) "Iron abundance FWHM", peak_width/(1.0d3*pc),"kpc"
+    close(16)
 
+    !####3
     !ASSUMO L'ASSENZA DI UN PROFILO INIZIALE DI FERRO E LA PRESENZA DELLA DIFFUSIONE
     !CONSIDERO UNA SORGENTE DI FERRO DOVUTA ALLE SNIa E AI VENTI STELLARI
     dcost=1.32d29 !coefficiente di diffusione costante (cgs, velocità per spazio tipiche della turbolenza 10^2km/s e 10kpc)
     zfe=0.d0
     rhofe=0.d0
-    snu=0.15d0 !
+    snu=0.5d0 
     time=0.d0
-    do while (time.le.5d9*3.14d7) !integra per 5 miliardi di anni FARE CINQUE SALVATAGGI DEL PROFILO DI DENSITA' IN CORRISPONDENZA DEI PASSI DA 1Gyr!!!
+    t_fin=5d9*3.14d7
+    do while (time.le.t_fin) !integra per 5 miliardi di anni (to do: CINQUE SALVATAGGI DEL PROFILO DI DENSITA' IN CORRISPONDENZA DEI PASSI DA 1Gyr!!!)
         gradfe(0)=0.d0
         gradfe(n-1)=0.d0
 
@@ -528,9 +594,13 @@ program DIFFUSIONE_METALLI
             call ftcs(rhofe(i), rhofe(i), lhs, dt) !costruzione del nuovo profilo di densità al tempo t+dt
         enddo
 
+        !numerical iron mass
+        call massa(m_fe_source_diff, rhofe, r, n)
+
         do i=1, n-2 !creazione del dato iniziale per il passo temporale successivo
             zfe(i)=1.4d0*rhofe(i)/rhogas_t(i)
         enddo
+
         !condizioni di outflow
         rhofe(0)=rhofe(1)
         rhofe(n-1)=rhofe(n-2)
@@ -546,9 +616,18 @@ program DIFFUSIONE_METALLI
     enddo
     close(17)
 
+    m_fe_source_diff_theo=(6d-23+snu*3.13d-21)*mbcg(n-1)*t_fin
+    open(18, file="m_fe_source_diff.txt")
+    write(18,*) "SOURCE and DIFFUSION with SNu=", snu, "and D=", dcost, "(cgs) for t=", t_fin/(3.14d16), "Gyrs"
+    write(18,*) "Numerical iron mass at 100kpc",  10**(log10(m_fe_source_diff(k)/msun)-8),"10^8 Solar Masses"
+    write(18,*) "Total numerical iron mass",  10**(log10(m_fe_source_diff(n-2)/msun)-8),"10^8 Solar Masses"
+    write(18,*) "Total analytical iron mass from the sources", 10**(log10(m_fe_source_diff_theo/msun)-8),"10^8 Solar Masses"
+    close(18)
+
 !DEALLOCATION OF THE ARRAYS
     deallocate(r, rr, rho, bcg, rhogas, rhogas_bcg, rhogas_t, rhogas_turb, &
            mdm, mbcg, mgas, mgas_bcg, mgas_t, mgas_turb, &
+           m_fe_source_diff, m_fe_source, m_fe_diff, m_fe_diff_theo, &
            lnrho, lnrho_bcg, lnrho_t, lnrho_turb, t, zfe, rhofe, gradfe)
 
            
